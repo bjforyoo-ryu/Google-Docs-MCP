@@ -26,3 +26,9 @@ GOOGLE_REDIRECT_URI = "https://google-docs-mcp.bjforyoo.workers.dev/auth/callbac
 
 # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and TOKEN_ENCRYPTION_KEY
 # must be configured as Cloudflare secrets.
+[secrets]
+required = [
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+  "TOKEN_ENCRYPTION_KEY"
+]
