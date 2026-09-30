@@ -1,0 +1,28 @@
+name = "google-docs-mcp"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = true
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[[kv_namespaces]]
+binding = "TOKENS"
+id = "2e3ebad2151247ca81a59b9948e22de0"
+
+[[durable_objects.bindings]]
+name = "MCP_SESSION"
+class_name = "MCPSession"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["MCPSession"]
+
+[vars]
+GOOGLE_REDIRECT_URI = "https://google-docs-mcp.bjforyoo.workers.dev/auth/callback"
+
+# GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and TOKEN_ENCRYPTION_KEY
+# must be configured as Cloudflare secrets.
