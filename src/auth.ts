@@ -38,6 +38,7 @@ async function decryptData(stored: string, base64Key: string): Promise<string> {
 const REQUIRED_SCOPES = [
   "https://www.googleapis.com/auth/documents",
   "https://www.googleapis.com/auth/drive.readonly",
+  "https://www.googleapis.com/auth/spreadsheets",
 ];
 
 const TOKEN_LIFETIME_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
@@ -64,7 +65,7 @@ export async function handleAuthLogin(request: Request, env: Env): Promise<Respo
   googleUrl.searchParams.set("client_id", env.GOOGLE_CLIENT_ID);
   googleUrl.searchParams.set("redirect_uri", env.GOOGLE_REDIRECT_URI);
   googleUrl.searchParams.set("response_type", "code");
-  googleUrl.searchParams.set("scope", "https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive.readonly");
+  googleUrl.searchParams.set("scope", "https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets");
   googleUrl.searchParams.set("access_type", "offline");
   googleUrl.searchParams.set("prompt", "consent");
   googleUrl.searchParams.set("state", state);
