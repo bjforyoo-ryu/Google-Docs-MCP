@@ -9,6 +9,7 @@ import {
 import { getAccessToken } from "./auth";
 import { Env } from "./types";
 import { getDocumentBody, createDocument, searchDocuments, replaceSection, appendText, listSections, getDocumentInfo, findAndReplace, listDocuments, deleteSection, readSection, insertSection, renameSection } from "./google-api";
+import { listSpreadsheets, readSheetRange, createSpreadsheet, writeSheetRange, appendSheetRows } from "./sheets-api";
 import { docToMarkdown } from "./markdown-utils";
 import { checkRateLimit, tokenTag } from "./utils";
 import { CloudflareSSEServerTransport } from "./transports/sse";
@@ -189,6 +190,69 @@ export class MCPSession {
       }
     },
     {
+      name: "list_spreadsheets",
+      description: "List the user's available Google Spreadsheets from Drive. Returns up to 20 sheets with their IDs and names.",
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+      inputSchema: {
+        type: "object" as const,
+        properties: {},
+        required: []
+      }
+    },
+    {
+      name: "read_sheet_range",
+      description: "Read the values from a specific range in a Google Spreadsheet.",
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          spreadsheetId: { type: "string", description: "The ID of the Google Spreadsheet" },
+          range: { type: "string", description: "The range to read, e.g., 'Sheet1!A1:B10'" }
+        },
+        required: ["spreadsheetId", "range"]
+      }
+    },
+    {
+      name: "create_spreadsheet",
+      description: "Create a new Google Spreadsheet and return its ID.",
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          title: { type: "string", description: "The title of the new Spreadsheet" }
+        },
+        required: ["title"]
+      }
+    },
+    {
+      name: "write_sheet_range",
+      description: "Write values to a specific range in a Google Spreadsheet. Overwrites existing values.",
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          spreadsheetId: { type: "string", description: "The ID of the Google Spreadsheet" },
+          range: { type: "string", description: "The range to write, e.g., 'Sheet1!A1:B10'" },
+          values: { type: "array", items: { type: "array", items: { type: "string" } }, description: "The 2D array of values to write" }
+        },
+        required: ["spreadsheetId", "range", "values"]
+      }
+    },
+    {
+      name: "append_sheet_rows",
+      description: "Append rows of values to the end of a sheet in a Google Spreadsheet.",
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          spreadsheetId: { type: "string", description: "The ID of the Google Spreadsheet" },
+          range: { type: "string", description: "The range where to append, e.g., 'Sheet1!A1'" },
+          values: { type: "array", items: { type: "array", items: { type: "string" } }, description: "The 2D array of values to append" }
+        },
+        required: ["spreadsheetId", "range", "values"]
+      }
+    },
+    {
       name: "rename_section",
       description: "Rename the heading of an existing section in a Google Document. The heading level (H1, H2, etc.) is preserved; only the text changes.",
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
@@ -312,6 +376,26 @@ export class MCPSession {
         const newHeaderText = req(args, "newHeaderText", 500);
         await renameSection(req(args, "documentId"), headerText, newHeaderText, accessToken);
         return { content: [{ type: "text", text: `Section renamed from "${headerText}" to "${newHeaderText}".` }] };
+      }
+      case "list_spreadsheets": {
+        const result = await listSpreadsheets(userToken, this.env);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+      case "read_sheet_range": {
+        const result = await readSheetRange(userToken, this.env, req(args, "spreadsheetId"), req(args, "range"));
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+      case "create_spreadsheet": {
+        const result = await createSpreadsheet(userToken, this.env, req(args, "title"));
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+      case "write_sheet_range": {
+        const result = await writeSheetRange(userToken, this.env, req(args, "spreadsheetId"), req(args, "range"), args.values);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+      case "append_sheet_rows": {
+        const result = await appendSheetRows(userToken, this.env, req(args, "spreadsheetId"), req(args, "range"), args.values);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
       default:
         throw new McpError(ErrorCode.MethodNotFound, `Tool not found: ${name}`);
